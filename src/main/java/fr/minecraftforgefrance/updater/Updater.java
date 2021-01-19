@@ -1,7 +1,18 @@
 package fr.minecraftforgefrance.updater;
 
-import static fr.minecraftforgefrance.common.Localization.LANG;
+import argo.jdom.JdomParser;
+import argo.jdom.JsonRootNode;
+import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
+import fr.minecraftforgefrance.common.*;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
+import net.minecraft.launchwrapper.Launch;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import javax.swing.*;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -14,27 +25,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-import javax.swing.JOptionPane;
-import javax.swing.UIManager;
-
-import com.google.common.base.Charsets;
-import com.google.common.base.Throwables;
-
-import argo.jdom.JdomParser;
-import argo.jdom.JsonRootNode;
-import argo.saj.InvalidSyntaxException;
-import fr.minecraftforgefrance.common.FileChecker;
-import fr.minecraftforgefrance.common.IInstallRunner;
-import fr.minecraftforgefrance.common.Localization;
-import fr.minecraftforgefrance.common.Logger;
-import fr.minecraftforgefrance.common.ProcessInstall;
-import fr.minecraftforgefrance.common.RemoteInfoReader;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import joptsimple.OptionSpec;
-import net.minecraft.launchwrapper.Launch;
+import static fr.minecraftforgefrance.common.Localization.LANG;
 
 public class Updater implements IInstallRunner
 {
@@ -94,22 +85,18 @@ public class Updater implements IInstallRunner
 
         try
         {
-            jsonProfileData = jsonParser.parse(com.google.common.io.Files.newReader(modpackInfo, Charsets.UTF_8));
-        }
-        catch(InvalidSyntaxException e)
+            jsonProfileData = jsonParser.parse(com.google.common.io.
+                    Files.newReader(modpackInfo, Charsets.UTF_8));
+        } catch(Exception e)
         {
             JOptionPane.showMessageDialog(null, LANG.getTranslation("err.erroredprofile"), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
             throw Throwables.propagate(e);
         }
-        catch(Exception e)
-        {
-            JOptionPane.showMessageDialog(null, LANG.getTranslation("err.erroredprofile"), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
-            throw Throwables.propagate(e);
-        }
-        
+
         this.injectLECert();
         
-        RemoteInfoReader.instance = new RemoteInfoReader(jsonProfileData.getStringValue("remote"));
+        new RemoteInfoReader(jsonProfileData.getStringValue("remote"));
+
         if(!RemoteInfoReader.instance().init())
         {
             runMinecraft(args);

@@ -1,26 +1,23 @@
 package fr.minecraftforgefrance.common;
 
-import static fr.minecraftforgefrance.common.Localization.LANG;
+import argo.jdom.JdomParser;
+import argo.jdom.JsonNode;
+import argo.jdom.JsonRootNode;
+import argo.saj.InvalidSyntaxException;
+import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 
-import javax.swing.JOptionPane;
-
-import com.google.common.base.Charsets;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
-
-import argo.jdom.JdomParser;
-import argo.jdom.JsonNode;
-import argo.jdom.JsonRootNode;
-import argo.saj.InvalidSyntaxException;
+import static fr.minecraftforgefrance.common.Localization.LANG;
 
 public class RemoteInfoReader
 {
@@ -31,6 +28,7 @@ public class RemoteInfoReader
 
     public RemoteInfoReader(String url)
     {
+        instance = this;
         this.remoteUrl = url;
     }
 
@@ -48,13 +46,7 @@ public class RemoteInfoReader
             e.printStackTrace();
             return false;
         }
-        catch(IOException e)
-        {
-            JOptionPane.showMessageDialog(null, LANG.getTranslation("err.cannotreadremote"), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-            return false;
-        }
-        catch(URISyntaxException e)
+        catch(URISyntaxException | IOException e)
         {
             JOptionPane.showMessageDialog(null, LANG.getTranslation("err.cannotreadremote"), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
@@ -89,9 +81,9 @@ public class RemoteInfoReader
 
     /**
      * An option to manage manually sub-folders
-     * By default the check of files is recursive, if you put "mods" in the list all folder inside
-     * "mods" will also be check. If sub-folder is enabled, is it will not be the case and you
-     * need to add "mods/subfolder" in the syncDir to make the installer checking it
+     * By default the checking of files is recursive, if you put "mods" in the list, all folders inside
+     * "mods" will also be checked. If sub-folder is enabled, it will not be the case and you will
+     * need to add "mods/subfolder" in the syncDir to make the installer check it
      * @return true if sub-folder is enabled
      */
     public boolean enableSubFolder()
@@ -216,13 +208,13 @@ public class RemoteInfoReader
         return this.data.getStringValue("install", "preset");
     }
     
-    private InputStreamReader getRemoteStream(String str) throws MalformedURLException, IOException, URISyntaxException
+    private InputStreamReader getRemoteStream(String str) throws IOException, URISyntaxException
     {
         URI uri = new URI(str);
         URLConnection connection = uri.toURL().openConnection();
         connection.setRequestProperty("Accept-Encoding", "gzip");
         connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:10.0) Gecko/20100101 Firefox/55.0");
-        InputStreamReader reader = null;
+        InputStreamReader reader;
         if("gzip".equals(connection.getContentEncoding()))
         {
             reader = new InputStreamReader(new GZIPInputStream(connection.getInputStream()), Charsets.UTF_8);

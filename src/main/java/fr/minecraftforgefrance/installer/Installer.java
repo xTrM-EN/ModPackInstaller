@@ -1,9 +1,9 @@
 package fr.minecraftforgefrance.installer;
 
-import javax.swing.UIManager;
-
 import fr.minecraftforgefrance.common.Localization;
 import fr.minecraftforgefrance.common.RemoteInfoReader;
+
+import javax.swing.*;
 
 public class Installer
 {
@@ -20,7 +20,9 @@ public class Installer
             e.printStackTrace();
         }
         Localization.init();
-        RemoteInfoReader.instance = new RemoteInfoReader(LocalInfoReader.instance().getRemoteUrl());
+
+        new RemoteInfoReader(LocalInfoReader.instance().getRemoteUrl());
+
         if(!RemoteInfoReader.instance().init())
         {
             return;

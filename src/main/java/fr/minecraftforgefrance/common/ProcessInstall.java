@@ -1,10 +1,18 @@
 package fr.minecraftforgefrance.common;
 
-import static argo.jdom.JsonNodeBuilders.aStringBuilder;
-import static fr.minecraftforgefrance.common.Localization.LANG;
+import argo.format.JsonFormatter;
+import argo.format.PrettyJsonFormatter;
+import argo.jdom.*;
+import argo.saj.InvalidSyntaxException;
+import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 
-import java.awt.EventQueue;
-import java.awt.HeadlessException;
+import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -15,36 +23,15 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import javax.swing.JOptionPane;
-
-import com.google.common.base.Charsets;
-import com.google.common.base.Function;
-import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.io.Files;
-
-import argo.format.JsonFormatter;
-import argo.format.PrettyJsonFormatter;
-import argo.jdom.JdomParser;
-import argo.jdom.JsonField;
-import argo.jdom.JsonNode;
-import argo.jdom.JsonNodeBuilders;
-import argo.jdom.JsonNodeFactories;
-import argo.jdom.JsonNodeSelector;
-import argo.jdom.JsonNodeSelectors;
-import argo.jdom.JsonObjectNodeBuilder;
-import argo.jdom.JsonRootNode;
-import argo.jdom.JsonStringNode;
-import argo.saj.InvalidSyntaxException;
+import static argo.jdom.JsonNodeBuilders.aStringBuilder;
+import static fr.minecraftforgefrance.common.Localization.LANG;
 
 public class ProcessInstall implements Runnable
 {
     private final InstallFrame installFrame;
-    private List<LibEntry> missingLibs = new ArrayList<LibEntry>();
+    private final List<LibEntry> missingLibs = new ArrayList<>();
 
     private static final JsonFormatter JSON_FORMATTER = new PrettyJsonFormatter();
 
@@ -87,13 +74,9 @@ public class ProcessInstall implements Runnable
         }
 
         final int totalSize = this.getTotalDownloadSize();
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                ProcessInstall.this.installFrame.fullProgressBar.setMaximum(totalSize);
-                ProcessInstall.this.installFrame.fullProgressBar.setIndeterminate(false);
-            }
+        EventQueue.invokeLater(() -> {
+            ProcessInstall.this.installFrame.fullProgressBar.setMaximum(totalSize);
+            ProcessInstall.this.installFrame.fullProgressBar.setIndeterminate(false);
         });
 
         this.downloadMod();
@@ -137,25 +120,15 @@ public class ProcessInstall implements Runnable
     {
         File librariesDir = new File(this.mcDir, "libraries");
         final List<JsonNode> libraries = RemoteInfoReader.instance().getProfileInfo().getArrayNode("libraries");
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                ProcessInstall.this.installFrame.fileProgressBar.setMaximum(libraries.size());
-                ProcessInstall.this.installFrame.fileProgressBar.setIndeterminate(false);
-            }
+        EventQueue.invokeLater(() -> {
+            ProcessInstall.this.installFrame.fileProgressBar.setMaximum(libraries.size());
+            ProcessInstall.this.installFrame.fileProgressBar.setIndeterminate(false);
         });
         int max = 0;
         for(final JsonNode library : libraries)
         {
             ProcessInstall.this.changeCurrentDownloadText(library.getStringValue("name"));
-            EventQueue.invokeLater(new Runnable()
-            {
-                public void run()
-                {
-                    ProcessInstall.this.installFrame.fileProgressBar.setValue(ProcessInstall.this.installFrame.fileProgressBar.getValue() + 1);
-                }
-            });
+            EventQueue.invokeLater(() -> ProcessInstall.this.installFrame.fileProgressBar.setValue(ProcessInstall.this.installFrame.fileProgressBar.getValue() + 1));
 
             List<String> checksums = null;
             String libName = library.getStringValue("name");
@@ -163,13 +136,7 @@ public class ProcessInstall implements Runnable
             {
                 if(library.isArrayNode("checksums"))
                 {
-                    checksums = Lists.newArrayList(Lists.transform(library.getArrayNode("checksums"), new Function<JsonNode, String>()
-                    {
-                        public String apply(JsonNode node)
-                        {
-                            return node.getText();
-                        }
-                    }));
+                    checksums = library.getArrayNode("checksums").stream().map(JsonNode::getText).collect(Collectors.toList());
                 }
 
                 Logger.info(String.format("Considering library %s", libName));
@@ -276,7 +243,7 @@ public class ProcessInstall implements Runnable
                 if(!DownloadUtils.downloadFile(new URL(entry.getUrl()), filePath, this.installFrame))
                 {
                     this.installFrame.dispose();
-                    JOptionPane.showMessageDialog(null, LANG.getTranslation("err.cannotdownload") + " : " + entry.getUrl().toString() + (entry.isXZ() ? DownloadUtils.PACK_NAME : ""), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, LANG.getTranslation("err.cannotdownload") + " : " + entry.getUrl() + (entry.isXZ() ? DownloadUtils.PACK_NAME : ""), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
                     Thread.currentThread().interrupt();
                     this.error = true;
                     return;
@@ -296,11 +263,7 @@ public class ProcessInstall implements Runnable
                     }
                 }
             }
-            catch(HeadlessException e)
-            {
-                e.printStackTrace();
-            }
-            catch(MalformedURLException e)
+            catch(HeadlessException | MalformedURLException e)
             {
                 e.printStackTrace();
             }
@@ -346,11 +309,7 @@ public class ProcessInstall implements Runnable
                         return;
                     }
                 }
-                catch(HeadlessException e)
-                {
-                    e.printStackTrace();
-                }
-                catch(MalformedURLException e)
+                catch(HeadlessException | MalformedURLException e)
                 {
                     e.printStackTrace();
                 }
@@ -360,24 +319,14 @@ public class ProcessInstall implements Runnable
 
     private void changeCurrentDownloadText(final String text)
     {
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                ProcessInstall.this.installFrame.currentDownload.setText(text);
-            }
-        });
+        EventQueue.invokeLater(() -> ProcessInstall.this.installFrame.currentDownload.setText(text));
     }
 
     public void finish()
     {
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                ProcessInstall.this.installFrame.fullProgressBar.setMaximum(100);
-                ProcessInstall.this.installFrame.fullProgressBar.setValue(100);
-            }
+        EventQueue.invokeLater(() -> {
+            ProcessInstall.this.installFrame.fullProgressBar.setMaximum(100);
+            ProcessInstall.this.installFrame.fullProgressBar.setValue(100);
         });
         this.installFrame.setTitle(LANG.getTranslation("misc.finishing"));
         this.createOrUpdateProfile();

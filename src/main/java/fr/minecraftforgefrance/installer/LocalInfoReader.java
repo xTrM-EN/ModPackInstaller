@@ -1,25 +1,24 @@
 package fr.minecraftforgefrance.installer;
 
-import static fr.minecraftforgefrance.common.Localization.LANG;
+import argo.jdom.JdomParser;
+import argo.jdom.JsonRootNode;
+import argo.saj.InvalidSyntaxException;
+import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
+
+import javax.swing.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import javax.swing.JOptionPane;
-
-import argo.jdom.JdomParser;
-import argo.jdom.JsonRootNode;
-import argo.saj.InvalidSyntaxException;
-
-import com.google.common.base.Charsets;
-import com.google.common.base.Throwables;
+import static fr.minecraftforgefrance.common.Localization.LANG;
 
 public class LocalInfoReader
 {
     private static final LocalInfoReader INSTANCE = new LocalInfoReader();
     public final JsonRootNode data;
 
-    public LocalInfoReader()
+    private LocalInfoReader()
     {
         JdomParser parser = new JdomParser();
         InputStream in = this.getClass().getResourceAsStream("/installer/local_info.json");

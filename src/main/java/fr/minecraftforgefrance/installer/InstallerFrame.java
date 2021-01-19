@@ -1,36 +1,18 @@
 package fr.minecraftforgefrance.installer;
 
-import static fr.minecraftforgefrance.common.Localization.LANG;
+import argo.jdom.JsonRootNode;
+import fr.minecraftforgefrance.common.*;
 
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URI;
 
-import javax.imageio.ImageIO;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-
-import argo.jdom.JsonRootNode;
-import fr.minecraftforgefrance.common.EnumOS;
-import fr.minecraftforgefrance.common.FileChecker;
-import fr.minecraftforgefrance.common.IInstallRunner;
-import fr.minecraftforgefrance.common.ProcessInstall;
-import fr.minecraftforgefrance.common.RemoteInfoReader;
-import fr.minecraftforgefrance.plusplus.PlusPlusGame;
+import static fr.minecraftforgefrance.common.Localization.LANG;
 
 public class InstallerFrame extends JFrame implements IInstallRunner
 {
@@ -63,7 +45,7 @@ public class InstallerFrame extends JFrame implements IInstallRunner
         {
             image = ImageIO.read(this.getClass().getResourceAsStream("/installer/logo.png"));
         }
-        catch(Exception e)
+        catch(Exception ignored)
         {
 
         }
@@ -93,78 +75,51 @@ public class InstallerFrame extends JFrame implements IInstallRunner
         JPanel buttonPanel = new JPanel();
 
         JButton install = new JButton(LANG.getTranslation("scr.btn.install"));
-        install.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
+        install.addActionListener(e -> {
+            InstallerFrame.this.dispose();
+            if(!InstallerFrame.this.mcDir.exists() || !InstallerFrame.this.mcDir.isDirectory())
             {
-                InstallerFrame.this.dispose();
-                if(!InstallerFrame.this.mcDir.exists() || !InstallerFrame.this.mcDir.isDirectory())
-                {
-                    JOptionPane.showMessageDialog(null, LANG.getTranslation("err.mcdirmissing"), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                FileChecker checker = new FileChecker(new File(new File(InstallerFrame.this.mcDir, "modpacks"), RemoteInfoReader.instance().getModPackName()));
-                ProcessInstall install = new ProcessInstall(checker, InstallerFrame.this, InstallerFrame.this.mcDir, InstallerFrame.this.preSet);
-                install.createFrame();
+                JOptionPane.showMessageDialog(null, LANG.getTranslation("err.mcdirmissing"), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
+                return;
             }
+            FileChecker checker = new FileChecker(new File(new File(InstallerFrame.this.mcDir, "modpacks"), RemoteInfoReader.instance().getModPackName()));
+            ProcessInstall install1 = new ProcessInstall(checker, InstallerFrame.this, InstallerFrame.this.mcDir, InstallerFrame.this.preSet);
+            install1.createFrame();
         });
         buttonPanel.add(install);
 
         if(RemoteInfoReader.instance().hasWebSite())
         {
             JButton webSite = new JButton(LANG.getTranslation("scr.btn.webSite"));
-            webSite.addActionListener(new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
+            webSite.addActionListener(e -> {
+                try
                 {
-                    try
-                    {
-                        Desktop.getDesktop().browse(new URI(RemoteInfoReader.instance().getWebSite()));
-                    }
-                    catch(Exception ex)
-                    {
-                        JOptionPane.showMessageDialog(InstallerFrame.this, String.format(LANG.getTranslation("err.cannotopenurl"), RemoteInfoReader.instance().getWebSite()), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
+                    Desktop.getDesktop().browse(new URI(RemoteInfoReader.instance().getWebSite()));
+                }
+                catch(Exception ex)
+                {
+                    JOptionPane.showMessageDialog(InstallerFrame.this, String.format(LANG.getTranslation("err.cannotopenurl"), RemoteInfoReader.instance().getWebSite()), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
             buttonPanel.add(webSite);
         }
 
         JButton credit = new JButton(LANG.getTranslation("scr.btn.credits"));
-        credit.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                CreditFrame credit = new CreditFrame(InstallerFrame.this);
-                credit.setVisible(true);
-            }
+        credit.addActionListener(e -> {
+            CreditFrame credit1 = new CreditFrame(InstallerFrame.this);
+            credit1.setVisible(true);
         });
         buttonPanel.add(credit);
 
         JButton option = new JButton(LANG.getTranslation("scr.btn.options"));
-        option.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                OptionFrame credit = new OptionFrame(InstallerFrame.this);
-                credit.setVisible(true);
-            }
+        option.addActionListener(e -> {
+            OptionFrame credit12 = new OptionFrame(InstallerFrame.this);
+            credit12.setVisible(true);
         });
         buttonPanel.add(option);
 
         JButton cancel = new JButton(LANG.getTranslation("misc.cancel"));
-        cancel.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                InstallerFrame.this.dispose();
-            }
-        });
+        cancel.addActionListener(e -> InstallerFrame.this.dispose());
         buttonPanel.add(cancel);
 
         JLabel welcome = new JLabel(RemoteInfoReader.instance().getWelcome());
@@ -194,30 +149,6 @@ public class InstallerFrame extends JFrame implements IInstallRunner
         });
         this.pack();
         this.setLocationRelativeTo(null);
-
-        addKeyListener(new KeyListener()
-        {
-            @Override
-            public void keyTyped(KeyEvent e)
-            {
-                if(e.getKeyChar() == '+' && !PlusPlusGame.isRunning)
-                {
-                    new PlusPlusGame();
-                }
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e)
-            {
-
-            }
-
-            @Override
-            public void keyPressed(KeyEvent e)
-            {
-
-            }
-        });
     }
 
     public void run()
