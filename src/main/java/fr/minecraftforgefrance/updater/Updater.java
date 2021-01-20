@@ -8,7 +8,6 @@ import fr.minecraftforgefrance.common.*;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-import net.minecraft.launchwrapper.Launch;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -47,12 +46,19 @@ public class Updater implements IInstallRunner
         final OptionSpec<File> gameDirOption = parser.accepts("gameDir", "The game directory").withRequiredArg().ofType(File.class);
         final OptionSpec<String> modpackOption = parser.accepts("version", "The version used").withRequiredArg();
 
+        final OptionSpec<String> mcVersionOption = parser.accepts("fml.mcVersion", "ModLoader parameter for the fml minecraft version").withRequiredArg();
+
         final OptionSet options = parser.parse(args);
-        File gameDir = options.valueOf(gameDirOption);
-        String modpackName = options.valueOf(modpackOption);
+
+        boolean usesModLauncher = options.has(mcVersionOption);
+        LauncherWrapper.getInstance().supportModLauncher(usesModLauncher);
+
         File modPackDir;
         File mcDir;
-        
+
+        File gameDir = options.valueOf(gameDirOption);
+        String modpackName = options.valueOf(modpackOption);
+
         if(!gameDir.getAbsoluteFile().getPath().endsWith(modpackName))
         {
             mcDir = gameDir;
@@ -99,13 +105,13 @@ public class Updater implements IInstallRunner
 
         if(!RemoteInfoReader.instance().init())
         {
-            runMinecraft(args);
+            LauncherWrapper.getInstance().launch(args);
         }
         FileChecker checker = new FileChecker(modPackDir);
         if(!shouldUpdate(jsonProfileData.getStringValue("forge"), checker))
         {
             Logger.info("No update found, launching Minecraft !");
-            runMinecraft(args);
+            LauncherWrapper.getInstance().launch(args);
         }
         else
         {
@@ -122,7 +128,6 @@ public class Updater implements IInstallRunner
         }
         long end = System.currentTimeMillis();
         Logger.info(String.format("Update checked in %d ms", (end - start)));
-
     }
 
     public boolean shouldUpdate(String forgeVersion, FileChecker checker)
@@ -139,12 +144,6 @@ public class Updater implements IInstallRunner
         return !checker.missingList.isEmpty() || !checker.outdatedList.isEmpty();
     }
 
-    public void runMinecraft(String[] args)
-    {
-        Logger.info("Lauching Minecraft ...");
-        Launch.main(args);
-    }
-
     @Override
     public void onFinish()
     {
@@ -154,7 +153,7 @@ public class Updater implements IInstallRunner
         }
         else
         {
-            runMinecraft(this.arguments);
+            LauncherWrapper.getInstance().launch(this.arguments);
         }
     }
 

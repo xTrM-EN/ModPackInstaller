@@ -95,13 +95,3 @@ misc.failed=Failed
 misc.error=Error
 misc.cancel=Cancel
 misc.success=Success
-
-
-
-#############
-#   ?????   #
-#############
-egg.name=The ++ Game
-egg.level=Level
-egg.score=Score
-egg.untilnextlevel=Clicks until next level
