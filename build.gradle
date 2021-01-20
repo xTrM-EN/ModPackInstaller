@@ -33,7 +33,7 @@ repositories {
 
 group = 'net.minecraftforgefrance'
 archivesBaseName = 'installer'
-version = '3.0.0-SNAPSHOT'
+version = '3.0.0'
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
 
@@ -113,5 +113,5 @@ jar {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.7'
+    gradleVersion = '3.0'
 }
