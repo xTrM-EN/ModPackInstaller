@@ -8,6 +8,7 @@ import net.minecraftforge.installer.json.Install;
 import net.minecraftforge.installer.json.Util;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.function.Consumer;
 
 import static fr.minecraftforgefrance.common.Localization.LANG;
@@ -16,10 +17,13 @@ public class ProcessInstallForge implements Consumer<InstallFrame> {
 
     @Override
     public void accept(InstallFrame frame){
+        Install profile = Util.loadInstallProfile();
+
         frame.setTitle(LANG.getTranslation("title.forgeinstall"));
         frame.fileProgressBar.setIndeterminate(true);
 
-        Install profile = Util.loadInstallProfile();
+        EventQueue.invokeLater(() -> frame.currentDownload.setText(LANG.getTranslation("title.forgeinstall") + " " + profile.getVersion()));
+
         ProgressCallback callback = (s, messagePriority) -> Logger.info(s);
 
         ClientInstall clientInstall = (ClientInstall) Actions.CLIENT.getAction(profile, callback);

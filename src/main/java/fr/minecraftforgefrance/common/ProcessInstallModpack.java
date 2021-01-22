@@ -263,6 +263,7 @@ public class ProcessInstallModpack implements Runnable
 
         URL installerURL = new URL("https://files.minecraftforge.net/maven/net/minecraftforge/forge/" + version + "/forge-" + version + "-installer.jar");
         File temp = File.createTempFile("forge-" + version + "-installer", ".jar");
+        temp.deleteOnExit();
 
         if(!DownloadUtils.downloadFile(installerURL, temp, this.installFrame))
         {
