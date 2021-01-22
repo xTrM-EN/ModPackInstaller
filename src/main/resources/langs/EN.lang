@@ -26,6 +26,7 @@ err.networkerror=Network error, please check your Internet connection
 err.noFile=There are no file to download !
 err.cannotdeletefile=Could not delete file
 err.cannotdownload=Could not download
+err.cannotinstallforge=Could not install Forge, please install it manually
 err.cannotwriteversion=There was a problem while writing the launcher version. Is it write protected?
 err.cannotwriteprofile=There was a problem while writing the launcher profile. Is it write protected?
 err.cannotreadremote=Could not read remote info, please check your Internet connection
@@ -35,15 +36,17 @@ err.bigimage=The image is too big!
 err.cannotfindlocalinfo=Local information not found, file /installer/local_info.json is missing in the jar
 err.invalidjson=The local json is not valid, please check it with this website : http://jsonlint.com/
 err.erroredprofile=Errored profile, please re-install it!
-err.runminecraft=can't run the game, run it manually
+err.runminecraft=Can't run the game, run it manually
 
 # Tasks done
+forge.remapped.success=Successfully remapped jar !
 file.unpacked.success=Successfully unpacked %s
 installation.success=Installation finished !
 update.finished.success=Update finished successfully, please restart the game !
 
 # Processes running
 proc.unpackingfile=Unpacking packed file
+proc.downloadingforge=Downloading Forge %s
 proc.downloadinglib=Downloading library %s
 proc.downloadingmods=Downloading mods and config files...
 proc.startingupdater=Starting the Updater...
@@ -56,6 +59,8 @@ proc.verifyfiles=Checking files ...
 ####################
 # Titles
 title.credits=Credits
+title.forge=Downloading Forge...
+title.forgeinstall=Installing Forge...
 title.libs=Downloading and extracting libraries...
 title.installer=%s Installer
 title.options=Options

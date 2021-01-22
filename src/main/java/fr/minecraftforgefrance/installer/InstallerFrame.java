@@ -83,7 +83,7 @@ public class InstallerFrame extends JFrame implements IInstallRunner
                 return;
             }
             FileChecker checker = new FileChecker(new File(new File(InstallerFrame.this.mcDir, "modpacks"), RemoteInfoReader.instance().getModPackName()));
-            ProcessInstall install1 = new ProcessInstall(checker, InstallerFrame.this, InstallerFrame.this.mcDir, InstallerFrame.this.preSet);
+            ProcessInstallModpack install1 = new ProcessInstallModpack(checker, InstallerFrame.this, InstallerFrame.this.mcDir, InstallerFrame.this.preSet);
             install1.createFrame();
         });
         buttonPanel.add(install);
@@ -167,5 +167,11 @@ public class InstallerFrame extends JFrame implements IInstallRunner
     public boolean shouldDownloadLib()
     {
         return true;
+    }
+
+    @Override
+    public boolean shouldInstallForge() {
+        Version ver = new Version(RemoteInfoReader.instance().getMinecraftVersion());
+        return ver.compareTo(new Version("1.13.0")) >= 0; //TODO: do something else anything but not that, that's just horrible i hate it its ugly its bad its shit HELP ME PLEAS-
     }
 }

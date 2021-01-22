@@ -16,19 +16,22 @@ import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static argo.jdom.JsonNodeBuilders.aStringBuilder;
 import static fr.minecraftforgefrance.common.Localization.LANG;
 
-public class ProcessInstall implements Runnable
+public class ProcessInstallModpack implements Runnable
 {
     private final InstallFrame installFrame;
     private final List<LibEntry> missingLibs = new ArrayList<>();
@@ -41,10 +44,10 @@ public class ProcessInstall implements Runnable
 
     public final File mcDir;
     public final File modPackDir;
-    
+
     private boolean error = false;
 
-    public ProcessInstall(FileChecker file, IInstallRunner runner, File mcDir, String preset)
+    public ProcessInstallModpack(FileChecker file, IInstallRunner runner, File mcDir, String preset)
     {
         this.installFrame = new InstallFrame(this);
         this.fileChecker = file;
@@ -75,13 +78,27 @@ public class ProcessInstall implements Runnable
 
         final int totalSize = this.getTotalDownloadSize();
         EventQueue.invokeLater(() -> {
-            ProcessInstall.this.installFrame.fullProgressBar.setMaximum(totalSize);
-            ProcessInstall.this.installFrame.fullProgressBar.setIndeterminate(false);
+            ProcessInstallModpack.this.installFrame.fullProgressBar.setMaximum(totalSize);
+            ProcessInstallModpack.this.installFrame.fullProgressBar.setIndeterminate(false);
         });
 
         this.downloadMod();
         if(this.runner.shouldDownloadLib())
         {
+            if(this.runner.shouldInstallForge())
+            {
+                try
+                {
+                    this.installForge1_13_plus();
+                }
+                catch(Throwable t)
+                {
+                	t.printStackTrace();
+                    // bon bah on espere qu'il l'a déja installé
+                    JOptionPane.showMessageDialog(null, LANG.getTranslation("err.cannotinstallforge"), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
             this.downloadLib();
         }
         if(this.preset != null)
@@ -113,7 +130,7 @@ public class ProcessInstall implements Runnable
 
     /**
      * Check for missing libraries
-     * 
+     *
      * @return the sum of all missing libs's size
      */
     private int checkMissingLibs()
@@ -121,14 +138,14 @@ public class ProcessInstall implements Runnable
         File librariesDir = new File(this.mcDir, "libraries");
         final List<JsonNode> libraries = RemoteInfoReader.instance().getProfileInfo().getArrayNode("libraries");
         EventQueue.invokeLater(() -> {
-            ProcessInstall.this.installFrame.fileProgressBar.setMaximum(libraries.size());
-            ProcessInstall.this.installFrame.fileProgressBar.setIndeterminate(false);
+            ProcessInstallModpack.this.installFrame.fileProgressBar.setMaximum(libraries.size());
+            ProcessInstallModpack.this.installFrame.fileProgressBar.setIndeterminate(false);
         });
         int max = 0;
         for(final JsonNode library : libraries)
         {
-            ProcessInstall.this.changeCurrentDownloadText(library.getStringValue("name"));
-            EventQueue.invokeLater(() -> ProcessInstall.this.installFrame.fileProgressBar.setValue(ProcessInstall.this.installFrame.fileProgressBar.getValue() + 1));
+            ProcessInstallModpack.this.changeCurrentDownloadText(library.getStringValue("name"));
+            EventQueue.invokeLater(() -> ProcessInstallModpack.this.installFrame.fileProgressBar.setValue(ProcessInstallModpack.this.installFrame.fileProgressBar.getValue() + 1));
 
             List<String> checksums = null;
             String libName = library.getStringValue("name");
@@ -189,7 +206,7 @@ public class ProcessInstall implements Runnable
 
     /**
      * Get the sum of all files's size to download
-     * 
+     *
      * @return the size
      */
     private int getTotalDownloadSize()
@@ -228,6 +245,41 @@ public class ProcessInstall implements Runnable
                 return;
             }
         }
+    }
+
+    /**
+     * TODO: make a less hacky approach to that
+     *
+     * @throws IOException
+     *      if something goes wrong
+     * @throws ReflectiveOperationException
+     *      if something goes wrong
+     */
+    public void installForge1_13_plus() throws IOException, ReflectiveOperationException
+    {
+        this.installFrame.setTitle(LANG.getTranslation("title.forge"));
+        String version = RemoteInfoReader.instance().getMinecraftVersion() + "-" + RemoteInfoReader.instance().getForgeVersion();
+        this.changeCurrentDownloadText(String.format(LANG.getTranslation("proc.downloadingforge"), version));
+
+        URL installerURL = new URL("https://files.minecraftforge.net/maven/net/minecraftforge/forge/" + version + "/forge-" + version + "-installer.jar");
+        File temp = File.createTempFile("forge-" + version + "-installer", ".jar");
+
+        if(!DownloadUtils.downloadFile(installerURL, temp, this.installFrame))
+        {
+            this.installFrame.dispose();
+            JOptionPane.showMessageDialog(null, LANG.getTranslation("err.cannotdownload") + " : " + installerURL.toString(), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
+            Thread.currentThread().interrupt();
+            this.error = true;
+            return;
+        }
+
+        URLClassLoader classLoader = (URLClassLoader) getClass().getClassLoader();
+        Method addUrlMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+        addUrlMethod.setAccessible(true);
+        addUrlMethod.invoke(classLoader, temp.toURI().toURL());
+
+        Consumer<InstallFrame> consumer = (Consumer<InstallFrame>) classLoader.loadClass("fr.minecraftforgefrance.common.ProcessInstallForge").getConstructor().newInstance();
+        consumer.accept(installFrame);
     }
 
     public void downloadLib()
@@ -319,14 +371,14 @@ public class ProcessInstall implements Runnable
 
     private void changeCurrentDownloadText(final String text)
     {
-        EventQueue.invokeLater(() -> ProcessInstall.this.installFrame.currentDownload.setText(text));
+        EventQueue.invokeLater(() -> ProcessInstallModpack.this.installFrame.currentDownload.setText(text));
     }
 
     public void finish()
     {
         EventQueue.invokeLater(() -> {
-            ProcessInstall.this.installFrame.fullProgressBar.setMaximum(100);
-            ProcessInstall.this.installFrame.fullProgressBar.setValue(100);
+            ProcessInstallModpack.this.installFrame.fullProgressBar.setMaximum(100);
+            ProcessInstallModpack.this.installFrame.fullProgressBar.setValue(100);
         });
         this.installFrame.setTitle(LANG.getTranslation("misc.finishing"));
         this.createOrUpdateProfile();
@@ -365,7 +417,7 @@ public class ProcessInstall implements Runnable
 
     /**
      * determine if the profile exist and if it is valid in the file launcher_profiles.json
-     * 
+     *
      * @param profiles
      *            JsonRootNode of the file launcher_profiles.json
      * @param modpackName

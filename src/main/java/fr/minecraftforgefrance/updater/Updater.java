@@ -123,7 +123,7 @@ public class Updater implements IInstallRunner
             {
                 e.printStackTrace();
             }
-            ProcessInstall install = new ProcessInstall(checker, this, mcDir, null);
+            ProcessInstallModpack install = new ProcessInstallModpack(checker, this, mcDir, null);
             install.createFrame();
         }
         long end = System.currentTimeMillis();
@@ -162,7 +162,12 @@ public class Updater implements IInstallRunner
     {
         return forgeUpdate;
     }
-    
+
+    @Override
+    public boolean shouldInstallForge() {
+        return LauncherWrapper.getInstance().supportsModLauncher();
+    }
+
     // Minecraft new launcher use Java 8u25, so let's encrypt cert isn't recognized. This code add the let's encrypt root cert in trust certs list.
     public void injectLECert()
     {

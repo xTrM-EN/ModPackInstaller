@@ -1,22 +1,15 @@
 package fr.minecraftforgefrance.common;
 
-import static fr.minecraftforgefrance.common.Localization.LANG;
-
-import java.io.File;
-
-import javax.swing.BoxLayout;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JTextArea;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
-
 import argo.jdom.JdomParser;
 import argo.jdom.JsonField;
 import argo.jdom.JsonRootNode;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+
+import javax.swing.*;
+import java.io.File;
+
+import static fr.minecraftforgefrance.common.Localization.LANG;
 
 public class InstallFrame extends JFrame
 {
@@ -28,9 +21,9 @@ public class InstallFrame extends JFrame
     public JLabel downloadSpeedLabel;
     public JLabel currentDownload;
 
-    private final ProcessInstall installThread;
+    private final ProcessInstallModpack installThread;
 
-    public InstallFrame(ProcessInstall install)
+    public InstallFrame(ProcessInstallModpack install)
     {
         this.installThread = install;
     }
@@ -94,7 +87,7 @@ public class InstallFrame extends JFrame
                 JsonRootNode jsonProfileData = jsonParser.parse(Files.newReader(modpackInfo, Charsets.UTF_8));
                 currentVersion = jsonProfileData.getStringValue("currentVersion");
             }
-            catch(Exception e)
+            catch(Exception ignored)
             {
 
             }

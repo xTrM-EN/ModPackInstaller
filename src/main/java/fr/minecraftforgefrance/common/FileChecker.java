@@ -1,5 +1,7 @@
 package fr.minecraftforgefrance.common;
 
+import argo.jdom.JsonField;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,14 +12,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import argo.jdom.JsonField;
-
 public class FileChecker
 {
-    public List<FileEntry> remoteList = Collections.synchronizedList(new ArrayList<FileEntry>());
-    public List<FileEntry> syncList = new ArrayList<FileEntry>();
-    public List<String> checkDir = new ArrayList<String>();
-    public List<FileEntry> localList = new ArrayList<FileEntry>();
+    public List<FileEntry> remoteList = Collections.synchronizedList(new ArrayList<>());
+    public List<FileEntry> syncList = new ArrayList<>();
+    public List<String> checkDir = new ArrayList<>();
+    public List<FileEntry> localList = new ArrayList<>();
 
     public List<FileEntry> missingList;
     public List<FileEntry> outdatedList;
@@ -50,24 +50,17 @@ public class FileChecker
             File dir = new File(this.modPackDir, dirName);
             if(dir.exists() && dir.isDirectory())
             {
-                if(RemoteInfoReader.instance().getSyncDir().contains(dirName))
-                {
-                    this.addFiles(this.localList, this.syncList, dir, this.modPackDir.getAbsolutePath(), true);
-                }
-                else
-                {
-                    this.addFiles(this.localList, this.syncList, dir, this.modPackDir.getAbsolutePath(), false);
-                }
+                this.addFiles(this.localList, this.syncList, dir, this.modPackDir.getAbsolutePath(), RemoteInfoReader.instance().getSyncDir().contains(dirName));
             }
         }
     }
 
     private void compare()
     {
-        this.missingList = new ArrayList<FileEntry>(this.remoteList);
+        this.missingList = new ArrayList<>(this.remoteList);
         this.missingList.removeAll(this.localList);
 
-        this.outdatedList = new ArrayList<FileEntry>(this.syncList);
+        this.outdatedList = new ArrayList<>(this.syncList);
         this.outdatedList.removeAll(this.remoteList);
 
         if(RemoteInfoReader.instance().hasWhiteList() && !this.outdatedList.isEmpty())
@@ -135,7 +128,7 @@ public class FileChecker
                 {
                     stream.close();
                 }
-                catch(final IOException localIOException)
+                catch(final IOException ignored)
                 {
 
                 }

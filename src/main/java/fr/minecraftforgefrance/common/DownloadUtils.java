@@ -1,19 +1,19 @@
 package fr.minecraftforgefrance.common;
 
-import static fr.minecraftforgefrance.common.Localization.LANG;
+import argo.jdom.JdomParser;
+import argo.jdom.JsonNode;
+import argo.jdom.JsonRootNode;
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
+import org.tukaani.xz.XZInputStream;
 
-import java.awt.EventQueue;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,17 +24,7 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Pack200;
 import java.util.zip.GZIPInputStream;
 
-import javax.swing.JOptionPane;
-
-import org.tukaani.xz.XZInputStream;
-
-import com.google.common.base.Charsets;
-import com.google.common.hash.Hashing;
-import com.google.common.io.Files;
-
-import argo.jdom.JdomParser;
-import argo.jdom.JsonNode;
-import argo.jdom.JsonRootNode;
+import static fr.minecraftforgefrance.common.Localization.LANG;
 
 public class DownloadUtils
 {
@@ -42,7 +32,7 @@ public class DownloadUtils
     public static final String PACK_NAME = ".pack.xz";
 
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat();
-    {
+    static {
         DECIMAL_FORMAT.setMaximumFractionDigits(2);
     }
 
@@ -59,7 +49,7 @@ public class DownloadUtils
             connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:10.0) Gecko/20100101 Firefox/55.0");
 
             JdomParser parser = new JdomParser();
-            InputStreamReader reader = null;
+            InputStreamReader reader;
             if("gzip".equals(connection.getContentEncoding()))
             {
                 reader = new InputStreamReader(new GZIPInputStream(connection.getInputStream()), Charsets.UTF_8);
@@ -103,13 +93,7 @@ public class DownloadUtils
 
     public static boolean downloadFile(final URL url, final File dest, final InstallFrame installFrame)
     {
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                installFrame.fileProgressBar.setIndeterminate(true);
-            }
-        });
+        EventQueue.invokeLater(() -> installFrame.fileProgressBar.setIndeterminate(true));
 
         FileOutputStream fos = null;
         BufferedReader reader = null;
@@ -121,14 +105,10 @@ public class DownloadUtils
 
             final int fileLength = connection.getContentLength();
 
-            EventQueue.invokeLater(new Runnable()
-            {
-                public void run()
-                {
-                    installFrame.fileProgressBar.setMaximum(fileLength);
-                    installFrame.fileProgressBar.setValue(0);
-                    installFrame.fileProgressBar.setIndeterminate(false);
-                }
+            EventQueue.invokeLater(() -> {
+                installFrame.fileProgressBar.setMaximum(fileLength);
+                installFrame.fileProgressBar.setValue(0);
+                installFrame.fileProgressBar.setIndeterminate(false);
             });
 
             InputStream in = connection.getInputStream();
@@ -139,7 +119,7 @@ public class DownloadUtils
             int downloadedAmount = 0;
             byte[] buff = new byte[1024];
 
-            int progress = 0;
+            int progress;
             while((progress = in.read(buff)) != -1)
             {
                 fos.write(buff, 0, progress);
@@ -154,12 +134,12 @@ public class DownloadUtils
                     downloadStartTime += 250L;
                     if(downloadSpeed > 1024F)
                     {
-                        changeDownloadSpeed(installFrame, String.format(LANG.getTranslation("misc.speed.mo"), String.valueOf(DECIMAL_FORMAT.format(downloadSpeed / 1024F))));
+                        changeDownloadSpeed(installFrame, String.format(LANG.getTranslation("misc.speed.mo"), DECIMAL_FORMAT.format(downloadSpeed / 1024F)));
 
                     }
                     else
                     {
-                        changeDownloadSpeed(installFrame, String.format(LANG.getTranslation("misc.speed.ko"), String.valueOf(DECIMAL_FORMAT.format(downloadSpeed))));
+                        changeDownloadSpeed(installFrame, String.format(LANG.getTranslation("misc.speed.ko"), DECIMAL_FORMAT.format(downloadSpeed)));
                     }
                 }
             }
@@ -167,7 +147,7 @@ public class DownloadUtils
         catch(Exception e)
         {
             e.printStackTrace();
-            System.err.println(String.format(LANG.getTranslation("err.invalidurl"), url.toString()));
+            System.err.printf(LANG.getTranslation("err.invalidurl") + "%n", url.toString());
             return false;
         }
         finally
@@ -195,25 +175,15 @@ public class DownloadUtils
 
     private static void addProgress(final InstallFrame installFrame, final int progress)
     {
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                installFrame.fileProgressBar.setValue(installFrame.fileProgressBar.getValue() + progress);
-                installFrame.fullProgressBar.setValue(installFrame.fullProgressBar.getValue() + progress);
-            }
+        EventQueue.invokeLater(() -> {
+            installFrame.fileProgressBar.setValue(installFrame.fileProgressBar.getValue() + progress);
+            installFrame.fullProgressBar.setValue(installFrame.fullProgressBar.getValue() + progress);
         });
     }
 
     private static void changeDownloadSpeed(final InstallFrame installFrame, final String text)
     {
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                installFrame.downloadSpeedLabel.setText(text);
-            }
-        });
+        EventQueue.invokeLater(() -> installFrame.downloadSpeedLabel.setText(text));
     }
 
     public static boolean checksumValid(File libPath, List<String> checksums)
@@ -239,7 +209,7 @@ public class DownloadUtils
     {
         Logger.info(String.format("Checking %s internal checksums", libPath.getAbsolutePath()));
 
-        HashMap<String, String> files = new HashMap<String, String>();
+        HashMap<String, String> files = new HashMap<>();
         String[] hashes = null;
         JarInputStream jar = new JarInputStream(new ByteArrayInputStream(data));
         JarEntry entry = jar.getNextJarEntry();
@@ -249,7 +219,7 @@ public class DownloadUtils
 
             if(entry.getName().equals("checksums.sha1"))
             {
-                hashes = new String(eData, Charset.forName("UTF-8")).split("\n");
+                hashes = new String(eData, StandardCharsets.UTF_8).split("\n");
             }
 
             if(!entry.isDirectory())

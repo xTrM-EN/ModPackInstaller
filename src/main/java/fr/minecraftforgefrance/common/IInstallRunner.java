@@ -5,4 +5,6 @@ public interface IInstallRunner
     void onFinish();
 
     boolean shouldDownloadLib();
+
+    boolean shouldInstallForge();
 }

@@ -16,10 +16,6 @@ public class LauncherWrapper {
 
     LauncherWrapper(){}
 
-    public void supportModLauncher(boolean modLauncher){
-        this.modLauncher = modLauncher;
-    }
-
     public void launch(String[] args){
         Logger.info("Launching Minecraft...");
 
@@ -47,6 +43,14 @@ public class LauncherWrapper {
             JOptionPane.showMessageDialog(null, LANG.getTranslation("err.runminecraft"), LANG.getTranslation("misc.error"), JOptionPane.ERROR_MESSAGE);
             throw Throwables.propagate(t);
         }
+    }
+
+    public void supportModLauncher(boolean modLauncher){
+        this.modLauncher = modLauncher;
+    }
+
+    public boolean supportsModLauncher(){
+        return modLauncher;
     }
 
     public static LauncherWrapper getInstance(){
